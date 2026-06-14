@@ -215,12 +215,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     }
 
-    persistLeads([lead, ...leads])
+    const next = [lead, ...leads]
+    setLeads(next)
+    saveLeads(next)
     setSession((prev) => ({ ...prev, submitted: true }))
-    refreshClients()
-    refreshAnalytics()
+
+    if (apiReady.current) {
+      api.createLead(lead).then(() => {
+        refreshClients()
+        refreshAnalytics()
+      }).catch(() => {
+        syncLeadsToApi(next)
+        refreshClients()
+        refreshAnalytics()
+      })
+    } else {
+      refreshClients()
+      refreshAnalytics()
+    }
+
     return true
-  }, [config, session, leads, persistLeads, refreshClients, refreshAnalytics])
+  }, [config, session, leads, syncLeadsToApi, refreshClients, refreshAnalytics])
 
   const updateConfig = useCallback((next: CalculatorConfig) => {
     setConfig(next)

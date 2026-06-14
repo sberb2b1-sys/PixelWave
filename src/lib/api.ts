@@ -21,6 +21,7 @@ export const api = {
   deleteClient: (id: string) => request<{ ok: boolean }>(`/clients/${id}`, { method: 'DELETE' }),
 
   getLeads: () => request<Lead[]>('/leads'),
+  createLead: (lead: Lead) => request<Lead>('/leads', { method: 'POST', body: JSON.stringify(lead) }),
   syncLeads: (leads: Lead[]) => request<{ ok: boolean }>('/leads', { method: 'PUT', body: JSON.stringify(leads) }),
   updateLeadStatus: (id: string, status: Lead['status']) =>
     request<Lead>(`/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),

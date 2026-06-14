@@ -2,9 +2,11 @@ import express from 'express'
 import cors from 'cors'
 import { randomUUID } from 'node:crypto'
 import { db } from './db.mjs'
+import { sendLeadNotification } from './email.mjs'
 
 const app = express()
 const PORT = process.env.PORT || 3001
+const HOST = process.env.HOST || '127.0.0.1'
 
 app.use(cors())
 app.use(express.json({ limit: '2mb' }))
@@ -136,40 +138,61 @@ app.get('/api/leads', (_req, res) => {
   res.json(rows.map(mapLead))
 })
 
+const insertLeadStmt = db.prepare(
+  `INSERT INTO leads (
+    id, name, email, phone, contact, comment, site_type_id, site_type_title, pages,
+    feature_ids, content_ready, design_id, design_title, timeline, budget, total,
+    breakdown, status, created_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+)
+
+function insertLead(lead) {
+  const id = lead.id || randomUUID()
+  const createdAt = lead.createdAt || new Date().toISOString()
+  insertLeadStmt.run(
+    id,
+    lead.name,
+    lead.email || '',
+    lead.phone || '',
+    lead.contact || '',
+    lead.comment || '',
+    lead.siteTypeId || '',
+    lead.siteTypeTitle || '',
+    lead.pages || 0,
+    JSON.stringify(lead.featureIds || []),
+    lead.contentReady || 'full',
+    lead.designId || '',
+    lead.designTitle || '',
+    lead.timeline || '',
+    lead.budget || '',
+    lead.total || 0,
+    JSON.stringify(lead.breakdown || []),
+    lead.status || 'new',
+    createdAt,
+  )
+  const row = db.prepare('SELECT * FROM leads WHERE id = ?').get(id)
+  return mapLead(row)
+}
+
+app.post('/api/leads', async (req, res) => {
+  const { name, contact } = req.body
+  if (!name?.trim() || !contact?.trim()) {
+    res.status(400).json({ error: 'Name and contact are required' })
+    return
+  }
+
+  const lead = insertLead(req.body)
+  sendLeadNotification(lead).catch(() => {})
+  res.status(201).json(lead)
+})
+
 app.put('/api/leads', (req, res) => {
   const leads = Array.isArray(req.body) ? req.body : []
   const del = db.prepare('DELETE FROM leads')
-  const ins = db.prepare(
-    `INSERT INTO leads (
-      id, name, email, phone, contact, comment, site_type_id, site_type_title, pages,
-      feature_ids, content_ready, design_id, design_title, timeline, budget, total,
-      breakdown, status, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  )
   const tx = db.transaction((items) => {
     del.run()
     for (const lead of items) {
-      ins.run(
-        lead.id,
-        lead.name,
-        lead.email || '',
-        lead.phone || '',
-        lead.contact || '',
-        lead.comment || '',
-        lead.siteTypeId || '',
-        lead.siteTypeTitle || '',
-        lead.pages || 0,
-        JSON.stringify(lead.featureIds || []),
-        lead.contentReady || 'full',
-        lead.designId || '',
-        lead.designTitle || '',
-        lead.timeline || '',
-        lead.budget || '',
-        lead.total || 0,
-        JSON.stringify(lead.breakdown || []),
-        lead.status || 'new',
-        lead.createdAt || new Date().toISOString(),
-      )
+      insertLead(lead)
     }
   })
   tx(leads)
@@ -247,6 +270,6 @@ app.get('/api/analytics', (_req, res) => {
   })
 })
 
-app.listen(PORT, () => {
-  console.log(`API server running at http://localhost:${PORT}`)
+app.listen(PORT, HOST, () => {
+  console.log(`API server running at http://${HOST}:${PORT}`)
 })
