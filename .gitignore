@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+
+# runtime database
+server/data.sqlite
+server/data.sqlite-*
+

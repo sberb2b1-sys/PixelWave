@@ -1,0 +1,14 @@
+:root, 
+[data-collection-2-2-mode="default"] {
+  /* Default */
+  --color-dark: rgba(26, 32, 44, 1);
+  --color-primary: rgba(102, 126, 234, 1);
+  --color-border: rgba(226, 232, 240, 1);
+  --color-primary-dark: rgba(107, 70, 193, 1);
+  --color-white: rgba(255, 255, 255, 1);
+  --color-warning: rgba(237, 137, 54, 1);
+  --color-text-secondary: rgba(113, 128, 150, 1);
+  --color-bg: rgba(249, 250, 251, 1);
+  --color-success: rgba(56, 161, 105, 1);
+}
+
