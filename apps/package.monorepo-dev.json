@@ -1,0 +1,15 @@
+{
+  "name": "ae-it-platform",
+  "private": true,
+  "description": "AE-IT monorepo scripts overlay — merge into ~/Desktop/ae-it-platform/package.json",
+  "scripts": {
+    "dev": "npx --yes concurrently -n portal,create,studio,api -c cyan,green,magenta,yellow \"npm run dev:portal\" \"npm run dev:create\" \"npm run dev:studio\" \"npm run dev:api\"",
+    "dev:portal": "npm run dev --prefix apps/portal",
+    "dev:create": "npm run dev --prefix apps/create",
+    "dev:studio": "npm run dev --prefix apps/studio",
+    "dev:api": "npm run dev:api --prefix apps/create",
+    "build:portal": "npm run build --prefix apps/portal",
+    "build:create": "npm run build --prefix apps/create",
+    "build:studio": "npm run build --prefix apps/studio"
+  }
+}
