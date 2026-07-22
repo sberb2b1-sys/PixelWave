@@ -61,6 +61,11 @@ export default function OwnerDashboardPage() {
     setLoadError(null)
   }
 
+  function handleUserDeleted(userId: string) {
+    setUsers((current) => current.filter((row) => row.id !== userId))
+    setLoadError(null)
+  }
+
   if (loading) {
     return (
       <div className="owner-layout owner-layout--centered">
@@ -98,6 +103,7 @@ export default function OwnerDashboardPage() {
           users={users}
           onUserUpdated={handleUserUpdated}
           onUserCreated={handleUserCreated}
+          onUserDeleted={handleUserDeleted}
           onError={(message) => setLoadError(message)}
         />
       </section>

@@ -165,3 +165,32 @@ export async function createOwnerUser(input: CreateOwnerUserInput): Promise<Crea
     passwordGenerated: Boolean(payload.passwordGenerated),
   }
 }
+
+/** Deletes Auth user (+ profile cascade) via Node API. */
+export async function deleteOwnerUser(id: string): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session?.access_token) {
+    throw new Error('Сессия истекла. Войдите снова.')
+  }
+
+  const response = await fetch(`/api/owner/users/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  })
+
+  let payload: { error?: string } = {}
+  try {
+    payload = await response.json()
+  } catch {
+    payload = {}
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error || `Не удалось удалить пользователя (${response.status})`)
+  }
+}

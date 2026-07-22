@@ -29,3 +29,24 @@
   letter-spacing: 0.02em;
   word-break: break-all;
 }
+
+.owner-table__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.owner-btn--danger {
+  background: #c53030;
+  color: #fff;
+  border: none;
+}
+
+.owner-btn--danger:hover:not(:disabled) {
+  background: #9b2c2c;
+}
+
+.owner-btn--danger:disabled {
+  opacity: 0.6;
+}

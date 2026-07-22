@@ -231,4 +231,39 @@ export function registerOwnerUserRoutes(app) {
       })
     }
   })
+
+  /**
+   * DELETE /api/owner/users/:id
+   * Removes Auth user (profiles cascade via FK). Cannot delete yourself.
+   */
+  app.delete('/api/owner/users/:id', async (req, res) => {
+    try {
+      const { admin, user: actor } = await requirePlatformAdmin(req)
+      const userId = String(req.params.id || '').trim()
+
+      if (!userId) {
+        return res.status(400).json({ error: 'Не указан id пользователя' })
+      }
+      if (userId === actor.id) {
+        return res.status(400).json({ error: 'Нельзя удалить свой собственный аккаунт' })
+      }
+
+      const { error: deleteError } = await admin.auth.admin.deleteUser(userId)
+      if (deleteError) {
+        const msg = deleteError.message || 'Не удалось удалить пользователя'
+        const lower = msg.toLowerCase()
+        if (lower.includes('not found') || lower.includes('user not found')) {
+          return res.status(404).json({ error: 'Пользователь не найден' })
+        }
+        return res.status(400).json({ error: msg })
+      }
+
+      return res.json({ ok: true, id: userId })
+    } catch (error) {
+      const status = error?.status || 500
+      return res.status(status).json({
+        error: error instanceof Error ? error.message : 'Неизвестная ошибка',
+      })
+    }
+  })
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   createOwnerUser,
+  deleteOwnerUser,
   formatOwnerDate,
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
@@ -14,6 +15,7 @@ type OwnerUsersTableProps = {
   users: OwnerUserRow[]
   onUserUpdated: (user: OwnerUserRow) => void
   onUserCreated: (user: OwnerUserRow) => void
+  onUserDeleted: (userId: string) => void
   onError: (message: string) => void
 }
 
@@ -48,6 +50,7 @@ export function OwnerUsersTable({
   users,
   onUserUpdated,
   onUserCreated,
+  onUserDeleted,
   onError,
 }: OwnerUsersTableProps) {
   const [editingUser, setEditingUser] = useState<OwnerUserRow | null>(null)
@@ -61,17 +64,21 @@ export function OwnerUsersTable({
   const [createdPassword, setCreatedPassword] = useState<string | null>(null)
   const [createdEmail, setCreatedEmail] = useState('')
 
+  const [deletingUser, setDeletingUser] = useState<OwnerUserRow | null>(null)
+  const [deleteSaving, setDeleteSaving] = useState(false)
+
   useEffect(() => {
-    if (!editingUser && !creating) return
+    if (!editingUser && !creating && !deletingUser) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !saving && !createSaving) {
+      if (event.key === 'Escape' && !saving && !createSaving && !deleteSaving) {
         if (editingUser) closeEditor()
         if (creating) closeCreate()
+        if (deletingUser) setDeletingUser(null)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [editingUser, creating, saving, createSaving])
+  }, [editingUser, creating, deletingUser, saving, createSaving, deleteSaving])
 
   function openEditor(user: OwnerUserRow) {
     setEditingUser(user)
@@ -149,6 +156,20 @@ export function OwnerUsersTable({
     }
   }
 
+  async function handleDelete() {
+    if (!deletingUser) return
+    setDeleteSaving(true)
+    try {
+      await deleteOwnerUser(deletingUser.id)
+      onUserDeleted(deletingUser.id)
+      setDeletingUser(null)
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Не удалось удалить пользователя')
+    } finally {
+      setDeleteSaving(false)
+    }
+  }
+
   async function copyPassword() {
     if (!createdPassword) return
     try {
@@ -215,6 +236,13 @@ export function OwnerUsersTable({
                       onClick={() => openEditor(user)}
                     >
                       Изменить
+                    </button>
+                    <button
+                      type="button"
+                      className="owner-btn owner-btn--danger owner-btn--sm"
+                      onClick={() => setDeletingUser(user)}
+                    >
+                      Удалить
                     </button>
                   </td>
                 </tr>
@@ -483,6 +511,66 @@ export function OwnerUsersTable({
                 onClick={() => void handleSave()}
               >
                 {saving ? 'Сохранение…' : 'Сохранить'}
+              </button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
+
+      {deletingUser ? (
+        <div
+          className="owner-modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (!deleteSaving) setDeletingUser(null)
+          }}
+        >
+          <div
+            className="owner-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="owner-user-delete-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="owner-modal__head">
+              <div>
+                <h2 id="owner-user-delete-title">Удалить пользователя?</h2>
+                <p className="owner-modal__subtitle">
+                  {deletingUser.fullName || 'Без имени'} · {deletingUser.email || 'без email'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="owner-modal__close"
+                aria-label="Закрыть"
+                disabled={deleteSaving}
+                onClick={() => setDeletingUser(null)}
+              >
+                ×
+              </button>
+            </header>
+
+            <p className="owner-modal__hint">
+              Аккаунт Auth и профиль будут удалены безвозвратно. Войти с этим email больше будет
+              нельзя, пока не создадите пользователя снова.
+            </p>
+
+            <footer className="owner-modal__footer">
+              <button
+                type="button"
+                className="owner-btn owner-btn--light"
+                disabled={deleteSaving}
+                onClick={() => setDeletingUser(null)}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="owner-btn owner-btn--danger"
+                disabled={deleteSaving}
+                onClick={() => void handleDelete()}
+              >
+                {deleteSaving ? 'Удаление…' : 'Удалить'}
               </button>
             </footer>
           </div>
