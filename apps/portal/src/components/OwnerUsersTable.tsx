@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  createOwnerUser,
   formatOwnerDate,
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
@@ -7,7 +8,6 @@ import {
   type OwnerUserRow,
   type OwnerUserUpdate,
 } from '@/lib/ownerDashboardApi'
-import { createOwnerUser } from '@/lib/createOwnerUser'
 import '@/styles/owner-users-create.css'
 
 type OwnerUsersTableProps = {

@@ -1,60 +1,46 @@
 # Owner: create full Auth users from /owner?view=users
 
-## What landed in this repo (PixelWave / create)
+## Create API
 
-- `server/ownerUsers.mjs` — `POST /api/owner/users` (service role + admin JWT)
-- `server/load-env.mjs` — loads `.env`
-- `server/index.mjs` — registers the route
-- `.env.example` / `server/env.example` — `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
+- `server/ownerUsers.mjs` and `apps/create/server/ownerUsers.mjs`
+- `POST /api/owner/users` — Bearer JWT of `profiles.is_admin`
+- Env: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
+- Registered in `server/index.mjs` (PixelWave) and `apps/create/server/index.mjs`
 
-## Portal UI (copy into Desktop monorepo `ae-it-platform`)
+Body: `{ fullName, email, phone?, password?, isAdmin? }`  
+Response: `{ user, passwordOnce, passwordGenerated }`
 
-| Source in this PR | Destination in `~/Desktop/ae-it-platform` |
-|---|---|
-| `apps/portal/src/components/OwnerUsersTable.tsx` | same path (replace) |
-| `apps/portal/src/lib/createOwnerUser.ts` | same path (add) |
-| `apps/portal/src/styles/owner-users-create.css` | import from `owner-dashboard.css` or `OwnerUsersTable` |
-| `apps/portal/vite.config.ts` | merge `/api` proxy |
-| `infra/nginx-portal-api-owner-users.conf` | merge `location /api/` into portal server |
-| `apps/create/server/ownerUsers.mjs` | `apps/create/server/` + register in `index.mjs` |
+## Portal
 
-### OwnerDashboardPage.tsx
+| File | Role |
+|------|------|
+| `apps/portal/src/lib/ownerDashboardApi.ts` | `createOwnerUser`, `fetchOwnerUsers`, `updateOwnerUser` |
+| `apps/portal/src/components/OwnerUsersTable.tsx` | «Добавить пользователя» modal |
+| `apps/portal/src/pages/OwnerDashboardPage.tsx` | wires `onUserCreated` |
+| `apps/portal/vite.config.ts` | proxy `/api` → `127.0.0.1:3001` |
+| `apps/portal/src/styles/owner-users-create.css` | toolbar + password reveal |
 
-```tsx
-function handleUserCreated(user: OwnerUserRow) {
-  setUsers((current) => [user, ...current.filter((row) => row.id !== user.id)])
-  setLoadError(null)
-}
+Merge into `~/Desktop/ae-it-platform`: copy these files (or merge `createOwnerUser` + table/page props into existing portal sources).
 
-<OwnerUsersTable
-  users={users}
-  onUserUpdated={handleUserUpdated}
-  onUserCreated={handleUserCreated}
-  onError={(message) => setLoadError(message)}
-/>
-```
+## Nginx (prod portal)
 
-Import CSS once:
+See `infra/nginx-ae-it-portal-api.snippet.conf` — add `location /api/` → `127.0.0.1:3001` on `ae-it.ru`.
 
-```ts
-import '@/styles/owner-users-create.css'
-```
-
-## Local run
+## Dev
 
 ```bash
-# in create (.env with SERVICE_ROLE)
+# API
+cp .env.example .env   # set SUPABASE_SERVICE_ROLE_KEY
 npm run dev:api
 
-# in portal (proxy /api → :3001)
-npm run dev
+# or monorepo-style
+npm run dev:api --prefix apps/create
 ```
 
-Open `http://localhost:5174/owner?view=users` → **Добавить пользователя**.
+Portal needs `/api` proxied (vite.config) and session of an `is_admin` user.
 
 ## VPS
 
-1. Put `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_URL` in `/etc/pixelwave-api.env`
-2. Deploy updated `server/ownerUsers.mjs` to `/opt/pixelwave-api/server/` (or flat layout)
-3. `systemctl restart pixelwave-api`
-4. Add portal nginx `location /api/` → `127.0.0.1:3001` and reload nginx
+1. `/etc/pixelwave-api.env` → `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+2. Deploy `ownerUsers.mjs`, restart `pixelwave-api`
+3. Portal nginx `/api/` + reload
