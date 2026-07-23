@@ -1,0 +1,12 @@
+{
+  "name": "ae-it-platform",
+  "private": true,
+  "description": "Merge scripts into ~/Desktop/ae-it-platform/package.json",
+  "scripts": {
+    "dev": "npx --yes concurrently -n portal,create,studio,api -c cyan,green,magenta,yellow \"npm run dev:portal\" \"npm run dev:create\" \"npm run dev:studio\" \"npm run dev:api\"",
+    "dev:portal": "npm run dev --prefix apps/portal",
+    "dev:create": "npm run dev --prefix apps/create",
+    "dev:studio": "npm run dev --prefix apps/studio",
+    "dev:api": "npm run dev:api --prefix apps/create"
+  }
+}

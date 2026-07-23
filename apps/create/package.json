@@ -1,0 +1,14 @@
+{
+  "name": "ae-it-create",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:api": "node server/index.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

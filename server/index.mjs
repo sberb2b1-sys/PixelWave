@@ -1,8 +1,10 @@
+import './load-env.mjs'
 import express from 'express'
 import cors from 'cors'
 import { randomUUID } from 'node:crypto'
 import { db } from './db.mjs'
 import { sendLeadNotification } from './email.mjs'
+import { registerOwnerUserRoutes } from './ownerUsers.mjs'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -10,6 +12,8 @@ const HOST = process.env.HOST || '127.0.0.1'
 
 app.use(cors())
 app.use(express.json({ limit: '2mb' }))
+
+registerOwnerUserRoutes(app)
 
 function getSettings() {
   const rows = db.prepare('SELECT key, value FROM settings').all()
